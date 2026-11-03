@@ -1,20 +1,569 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<base target="_top">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>인천남고등학교 작품 갤러리</title>
-<meta http-equiv="refresh" content="0; url=여기에_웹앱_URL">
+<title>작품 갤러리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-  body { font-family: sans-serif; display: grid; place-items: center; min-height: 100vh; margin: 0; background: #f4f5fb; color: #181a2a; text-align: center; }
-  a { display: inline-block; margin-top: 14px; padding: 12px 22px; border-radius: 12px; background: #5b5bf0; color: #fff; font-weight: 700; text-decoration: none; }
+  :root {
+    --bg: #f4f5fb;
+    --surface: #ffffff;
+    --text: #181a2a;
+    --muted: #6b7088;
+    --line: #e5e7f2;
+    --primary: #5b5bf0;
+    --primary-2: #8b5cf6;
+    --danger: #ef4444;
+    --ok: #10b981;
+    --radius: 20px;
+    --shadow: 0 10px 30px rgba(40, 44, 100, .08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(900px 400px at 10% -10%, rgba(91,91,240,.14), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(139,92,246,.12), transparent 60%),
+      var(--bg);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* 상단 바 */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(14px);
+    background: rgba(255,255,255,.75);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1120px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -.02em; cursor: pointer; border: 0; background: none; color: var(--text); padding: 0; }
+  .brand .emblem { width: 40px; height: 40px; flex: none; filter: drop-shadow(0 4px 8px rgba(30,58,138,.25)); }
+  .brand-text { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+  .brand-text small { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0; margin-bottom: 2px; }
+
+  /* 안내문구 */
+  .notice {
+    background: #f4f5ff; border: 1px solid #dfe1ff; border-radius: 14px;
+    padding: 14px 16px; margin: 0 0 20px; font-size: 13.5px; line-height: 1.6; color: #3b3f66;
+  }
+  .notice b { display: block; margin-bottom: 4px; color: var(--primary); font-size: 13px; }
+  .notice ol { margin: 0; padding-left: 20px; }
+  .notice li { margin-bottom: 2px; }
+  .top-notice { margin-bottom: 24px; }
+  .actions { display: flex; gap: 8px; }
+  .btn {
+    border: 0; border-radius: 12px; padding: 10px 16px; font-weight: 700; font-size: 14px;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { color: #fff; background: linear-gradient(135deg, var(--primary), var(--primary-2)); box-shadow: 0 6px 16px rgba(91,91,240,.3); }
+  .btn-primary:hover { box-shadow: 0 8px 20px rgba(91,91,240,.4); }
+  .btn-ghost { background: #fff; color: var(--text); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: #f1f2fa; }
+  .btn-ok { background: #d1fae5; color: #047857; }
+  .btn-danger { background: #fee2e2; color: #b91c1c; }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 28px 20px 80px; }
+  .view { display: none; animation: fade .25s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .hero h1 { margin: 0 0 6px; font-size: clamp(26px, 5vw, 38px); letter-spacing: -.03em; }
+  .hero p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* 필터 탭 */
+  .tabs { display: flex; gap: 8px; margin: 22px 0; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: none; border: 1px solid var(--line); background: #fff; color: var(--muted);
+    padding: 9px 16px; border-radius: 999px; font-weight: 700; font-size: 14px;
+  }
+  .tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+  /* 카드 */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--surface); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); border: 1px solid rgba(229,231,242,.7);
+    display: flex; flex-direction: column;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 16px 36px rgba(40,44,100,.14); }
+  .thumb { position: relative; aspect-ratio: 4 / 3; background: #e9eaf6; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .badge {
+    position: absolute; left: 12px; top: 12px; color: #fff; font-size: 12px; font-weight: 800;
+    padding: 5px 11px; border-radius: 999px; backdrop-filter: blur(6px);
+  }
+  .badge.t-게임 { background: rgba(124,58,237,.85); }
+  .badge.t-웹앱 { background: rgba(14,116,144,.85); }
+  .badge.t-게시글 { background: rgba(234,88,12,.85); }
+  .badge.t-자료 { background: rgba(5,150,105,.85); }
+  .card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card-title { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.02em; line-height: 1.35; }
+  .card-desc { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .author { color: var(--muted); font-size: 13px; font-weight: 600; }
+  .card-foot { margin-top: auto; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .open-link { color: var(--primary); font-weight: 800; font-size: 14px; text-decoration: none; }
+  .open-link:hover { text-decoration: underline; }
+  .like {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: #fff;
+    border-radius: 999px; padding: 7px 13px; font-weight: 800; font-size: 14px; color: var(--muted);
+    transition: transform .12s ease;
+  }
+  .like:hover { border-color: #fecdd3; }
+  .like.liked { color: #e11d48; background: #fff1f2; border-color: #fecdd3; }
+  .like.pop { animation: pop .35s ease; }
+  @keyframes pop { 40% { transform: scale(1.25); } }
+
+  .empty { text-align: center; color: var(--muted); padding: 70px 10px; }
+  .empty .big { font-size: 42px; margin-bottom: 8px; }
+  .skeleton { height: 330px; border-radius: var(--radius); background: linear-gradient(90deg,#eceefa 25%,#f6f7fd 50%,#eceefa 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* 폼 */
+  .panel { max-width: 560px; margin: 0 auto; background: var(--surface); border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid rgba(229,231,242,.7); }
+  .panel h2 { margin: 0 0 4px; font-size: 24px; letter-spacing: -.02em; }
+  .panel .sub { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 7px; }
+  .field input[type=text], .field input[type=url], .field input[type=password], .field textarea {
+    width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 13px 14px;
+    font: inherit; font-size: 15px; background: #fafbff; color: var(--text); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field textarea { min-height: 110px; resize: vertical; }
+  .field input:focus, .field textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(91,91,240,.12); background: #fff; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .types input { position: absolute; opacity: 0; pointer-events: none; }
+  .types label {
+    margin: 0; text-align: center; padding: 12px 4px; border: 1.5px solid var(--line); border-radius: 12px;
+    font-weight: 800; font-size: 14px; color: var(--muted); cursor: pointer; background: #fafbff; transition: all .15s;
+  }
+  .types input:checked + label { border-color: var(--primary); color: var(--primary); background: #f0f0ff; box-shadow: 0 0 0 3px rgba(91,91,240,.12); }
+  .form-actions { display: flex; gap: 10px; margin-top: 22px; }
+  .form-actions .btn { flex: 1; padding: 14px; font-size: 15px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* 관리자 */
+  .admin-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  .admin-head h2 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
+  .table-wrap { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; border: 1px solid rgba(229,231,242,.7); }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  th, td { padding: 14px 16px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; background: #fafbff; }
+  tr:last-child td { border-bottom: 0; }
+  .status { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+  .status.wait { background: #fef3c7; color: #b45309; }
+  .status.ok { background: #d1fae5; color: #047857; }
+  .cell-desc { max-width: 280px; color: var(--muted); word-break: break-word; }
+  .cell-actions { display: flex; gap: 6px; white-space: nowrap; }
+  .cell-actions .btn { padding: 7px 12px; font-size: 13px; }
+  td a { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+  /* 모달 / 토스트 */
+  .modal-bg { position: fixed; inset: 0; background: rgba(20,22,40,.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .modal-bg.show { display: flex; }
+  .modal { width: 100%; max-width: 380px; background: #fff; border-radius: 22px; padding: 26px; animation: fade .2s ease; }
+  .modal h3 { margin: 0 0 14px; font-size: 20px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 30px); opacity: 0;
+    background: #181a2a; color: #fff; padding: 13px 20px; border-radius: 14px; font-size: 14px; font-weight: 700;
+    transition: all .25s ease; z-index: 60; max-width: calc(100% - 32px); text-align: center; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.err { background: #b91c1c; }
+
+  @media (max-width: 600px) {
+    .topbar-inner { padding: 12px 14px; }
+    .brand { font-size: 16px; gap: 8px; }
+    .brand .emblem { width: 34px; height: 34px; }
+    .brand-text small { font-size: 11px; }
+    .btn { padding: 9px 12px; font-size: 13px; }
+    main { padding: 20px 14px 70px; }
+    .grid { grid-template-columns: 1fr; }
+    .panel { padding: 22px 18px; border-radius: 20px; }
+    .row2 { grid-template-columns: 1fr; gap: 0; }
+    .types { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
-  <div>
-    <h2>인천남고등학교 작품 갤러리</h2>
-    <p>갤러리로 이동하는 중입니다…</p>
-    <a href="https://script.google.com/macros/s/AKfycbzEsBKBrxp8Jk5bUrquiGS5Fa5nkNy3MQSXhTmre-aBB79emAkDkVI4_50-wCn7ijM/exec">바로 가기</a>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <button class="brand" onclick="go('gallery')" aria-label="인천남고등학교 작품 갤러리 홈">
+      <svg class="emblem" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="emb" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1e3a8a"/>
+            <stop offset="1" stop-color="#5b5bf0"/>
+          </linearGradient>
+        </defs>
+        <path d="M32 3 L57 11 V33 C57 47 46 56 32 61 C18 56 7 47 7 33 V11 Z" fill="url(#emb)"/>
+        <path d="M32 7 L53 13.5 V33 C53 44.5 44 52.5 32 57 C20 52.5 11 44.5 11 33 V13.5 Z" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="1.5"/>
+        <path d="M32 11 l2.2 4.6 5 .7 -3.6 3.5 .9 5 -4.5 -2.4 -4.5 2.4 .9 -5 -3.6 -3.5 5 -.7z" fill="#fde047"/>
+        <text x="32" y="43" font-size="19" font-weight="800" text-anchor="middle" fill="#fff" font-family="Pretendard Variable, Pretendard, Malgun Gothic, sans-serif">남</text>
+        <path d="M17 49 q5 -4 10 0 t10 0 t10 0" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-text"><small>인천남고등학교</small>작품 갤러리</span>
+    </button>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="go('register')">등록하기</button>
+      <button class="btn btn-ghost" onclick="openAdmin()">관리자 모드</button>
+    </div>
   </div>
+</header>
+
+<main>
+  <!-- 갤러리 -->
+  <section id="view-gallery" class="view active">
+    <div class="notice top-notice">
+      <b>📌 안내</b>
+      <ol>
+        <li>제출해주신 작품은 검수 절차를 거쳐 승인 완료 후 공개됩니다.</li>
+        <li>올바른 저작권 문화 조성을 위해 저작권 침해 여부를 사전에 철저히 검토해 주시기 바랍니다.</li>
+      </ol>
+    </div>
+    <div class="hero">
+      <h1>우리들의 작품 갤러리</h1>
+      <p>친구들이 만든 게임, 웹앱, 글, 자료를 구경하고 ❤ 를 눌러 응원해 주세요.</p>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 등록 -->
+  <section id="view-register" class="view">
+    <div class="panel">
+      <h2>작품 등록하기</h2>
+      <p class="sub">등록한 작품은 관리자 승인 후 갤러리에 게시돼요.</p>
+      <div class="notice">
+        <b>📌 안내</b>
+        <ol>
+          <li>제출해주신 작품은 검수 절차를 거쳐 승인 완료 후 공개됩니다.</li>
+          <li>올바른 저작권 문화 조성을 위해 저작권 침해 여부를 사전에 철저히 검토해 주시기 바랍니다.</li>
+        </ol>
+      </div>
+      <form id="form" autocomplete="off">
+        <div class="row2">
+          <div class="field"><label for="f-sid">학번</label><input type="text" id="f-sid" maxlength="20" placeholder="예: 10315" inputmode="numeric" required></div>
+          <div class="field"><label for="f-name">이름</label><input type="text" id="f-name" maxlength="30" placeholder="홍길동" required></div>
+        </div>
+        <div class="field"><label for="f-url">작품 URL</label><input type="url" id="f-url" maxlength="500" placeholder="https://" required></div>
+        <div class="field">
+          <label>작품 종류</label>
+          <div class="types">
+            <div><input type="radio" name="type" id="t1" value="게임" checked><label for="t1">🎮 게임</label></div>
+            <div><input type="radio" name="type" id="t2" value="웹앱"><label for="t2">🧩 웹앱</label></div>
+            <div><input type="radio" name="type" id="t3" value="게시글"><label for="t3">📝 게시글</label></div>
+            <div><input type="radio" name="type" id="t4" value="자료"><label for="t4">📚 자료</label></div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-desc">설명</label>
+          <textarea id="f-desc" maxlength="300" placeholder="어떤 작품인지 간단히 소개해 주세요." required></textarea>
+          <div class="hint"><span id="count">0</span> / 300</div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" onclick="go('gallery')">취소</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">등록하기</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- 관리자 -->
+  <section id="view-admin" class="view">
+    <div class="admin-head">
+      <h2>관리자 모드</h2>
+      <div class="actions">
+        <button class="btn btn-ghost" onclick="loadAdmin()">새로고침</button>
+        <button class="btn btn-ghost" onclick="exitAdmin()">나가기</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>상태</th><th>종류</th><th>학번/이름</th><th>설명</th><th>작품</th><th>❤</th><th>등록일시</th><th>관리</th></tr></thead>
+        <tbody id="adminBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<!-- 관리자 로그인 모달 -->
+<div class="modal-bg" id="loginModal">
+  <div class="modal">
+    <h3>관리자 확인</h3>
+    <div class="field"><input type="password" id="adminPw" placeholder="비밀번호"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeLogin()">취소</button>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  var TYPES = ['전체', '게임', '웹앱', '게시글', '자료'];
+  var posts = [];
+  var currentType = '전체';
+  var adminPw = '';
+  var liked = {};
+  try { liked = JSON.parse(localStorage.getItem('likedPosts') || '{}'); } catch (e) {}
+
+  /* ---------- 공통 ---------- */
+  function api(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+      runner[fn].apply(runner, args);
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function safeUrl(u) { return /^https?:\/\//i.test(u) ? u : '#'; }
+  function toast(msg, isErr) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isErr ? ' err' : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.className = 'toast'; }, 2600);
+  }
+  function errMsg(e) { return (e && e.message ? e.message : String(e)).replace(/^Error:\s*/, ''); }
+
+  function go(name) {
+    ['gallery', 'register', 'admin'].forEach(function (v) {
+      document.getElementById('view-' + v).classList.toggle('active', v === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (name === 'gallery') loadGallery();
+  }
+
+  /* 종류별 기본 일러스트 (Gemini 이미지가 없거나 불러오지 못할 때 사용) */
+  var FALLBACK = {
+    '게임': ['#7c3aed', '#06b6d4', '🎮'],
+    '웹앱': ['#0ea5e9', '#14b8a6', '🧩'],
+    '게시글': ['#f97316', '#ec4899', '📝'],
+    '자료': ['#10b981', '#eab308', '📚']
+  };
+  function fallbackSrc(type) {
+    var f = FALLBACK[type] || ['#6366f1', '#8b5cf6', '✦'];
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + f[0] + '"/><stop offset="1" stop-color="' + f[1] + '"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><circle cx="320" cy="60" r="70" fill="#fff" opacity=".12"/><circle cx="60" cy="250" r="90" fill="#fff" opacity=".1"/><text x="200" y="175" font-size="90" text-anchor="middle">' + f[2] + '</text></svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  function onImgError(img, type) {
+    img.onerror = null;
+    img.src = fallbackSrc(type);
+  }
+
+  /* ---------- 갤러리 ---------- */
+  function renderTabs() {
+    var el = document.getElementById('tabs');
+    el.innerHTML = TYPES.map(function (t) {
+      return '<button class="tab' + (t === currentType ? ' active' : '') + '" data-type="' + t + '">' + t + '</button>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('.tab'), function (b) {
+      b.onclick = function () { currentType = b.getAttribute('data-type'); renderTabs(); renderGrid(); };
+    });
+  }
+
+  function summary(desc) {
+    var first = String(desc).split(/\n|[.!?。]/)[0].trim() || String(desc);
+    return first.length > 28 ? first.slice(0, 28) + '…' : first;
+  }
+
+  function renderGrid() {
+    var grid = document.getElementById('grid');
+    var list = posts.filter(function (p) { return currentType === '전체' || p.type === currentType; });
+    if (!list.length) {
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="big">🖼️</div>아직 게시된 작품이 없어요.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(function (p) {
+      var src = p.image ? esc(p.image) : fallbackSrc(p.type);
+      var isLiked = !!liked[p.id];
+      return '' +
+        '<article class="card">' +
+          '<div class="thumb">' +
+            '<img src="' + src + '" alt="' + esc(p.type) + ' 이미지" loading="lazy" onerror="onImgError(this,\'' + esc(p.type) + '\')">' +
+            '<span class="badge t-' + esc(p.type) + '">' + esc(p.type) + '</span>' +
+          '</div>' +
+          '<div class="card-body">' +
+            '<h3 class="card-title">' + esc(summary(p.desc)) + '</h3>' +
+            '<p class="card-desc">' + esc(p.desc) + '</p>' +
+            '<div class="author">' + esc(p.studentId) + ' · ' + esc(p.name) + '</div>' +
+            '<div class="card-foot">' +
+              '<a class="open-link" href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener noreferrer">작품 열기 →</a>' +
+              '<button class="like' + (isLiked ? ' liked' : '') + '" data-id="' + esc(p.id) + '">' +
+                '<span>' + (isLiked ? '❤️' : '🤍') + '</span><b>' + p.likes + '</b>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+        '</article>';
+    }).join('');
+    Array.prototype.forEach.call(grid.querySelectorAll('.like'), function (b) {
+      b.onclick = function () { doLike(b); };
+    });
+  }
+
+  function loadGallery() {
+    var grid = document.getElementById('grid');
+    if (!posts.length) grid.innerHTML = '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+    api('getApprovedPosts').then(function (list) {
+      posts = list || [];
+      renderTabs();
+      renderGrid();
+    }).catch(function (e) {
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1">불러오지 못했어요.<br>' + esc(errMsg(e)) + '</div>';
+    });
+  }
+
+  function doLike(btn) {
+    var id = btn.getAttribute('data-id');
+    if (liked[id]) { toast('이미 좋아요를 눌렀어요 ❤️'); return; }
+    var countEl = btn.querySelector('b');
+    var prev = Number(countEl.textContent) || 0;
+    liked[id] = 1;
+    try { localStorage.setItem('likedPosts', JSON.stringify(liked)); } catch (e) {}
+    btn.classList.add('liked', 'pop');
+    btn.querySelector('span').textContent = '❤️';
+    countEl.textContent = prev + 1;
+    api('likePost', id).then(function (n) {
+      countEl.textContent = n;
+      var p = posts.filter(function (x) { return x.id === id; })[0];
+      if (p) p.likes = n;
+    }).catch(function (e) {
+      delete liked[id];
+      try { localStorage.setItem('likedPosts', JSON.stringify(liked)); } catch (x) {}
+      btn.classList.remove('liked');
+      btn.querySelector('span').textContent = '🤍';
+      countEl.textContent = prev;
+      toast(errMsg(e), true);
+    });
+    setTimeout(function () { btn.classList.remove('pop'); }, 400);
+  }
+
+  /* ---------- 등록 ---------- */
+  document.getElementById('f-desc').addEventListener('input', function () {
+    document.getElementById('count').textContent = this.value.length;
+  });
+  document.getElementById('form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var btn = document.getElementById('submitBtn');
+    var data = {
+      studentId: document.getElementById('f-sid').value,
+      name: document.getElementById('f-name').value,
+      url: document.getElementById('f-url').value,
+      type: document.querySelector('input[name=type]:checked').value,
+      desc: document.getElementById('f-desc').value
+    };
+    btn.disabled = true;
+    btn.textContent = '등록 중… (첫 등록은 이미지 생성으로 조금 걸려요)';
+    api('addPost', data).then(function () {
+      toast('등록 완료! 관리자 승인 후 게시됩니다 ✅');
+      document.getElementById('form').reset();
+      document.getElementById('count').textContent = '0';
+      go('gallery');
+    }).catch(function (e) {
+      toast(errMsg(e), true);
+    }).then(function () {
+      btn.disabled = false;
+      btn.textContent = '등록하기';
+    });
+  });
+
+  /* ---------- 관리자 ---------- */
+  function openAdmin() {
+    if (adminPw) { go('admin'); loadAdmin(); return; }
+    document.getElementById('adminPw').value = '';
+    document.getElementById('loginModal').classList.add('show');
+    setTimeout(function () { document.getElementById('adminPw').focus(); }, 50);
+  }
+  function closeLogin() { document.getElementById('loginModal').classList.remove('show'); }
+  document.getElementById('adminPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
+
+  function doLogin() {
+    var pw = document.getElementById('adminPw').value;
+    var btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    api('adminLogin', pw).then(function () {
+      adminPw = pw;
+      closeLogin();
+      go('admin');
+      loadAdmin();
+    }).catch(function (e) {
+      toast(errMsg(e), true);
+    }).then(function () { btn.disabled = false; });
+  }
+  function exitAdmin() { adminPw = ''; go('gallery'); }
+
+  function loadAdmin() {
+    var body = document.getElementById('adminBody');
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#6b7088">불러오는 중…</td></tr>';
+    api('getAllPosts', adminPw).then(function (list) {
+      if (!list.length) {
+        body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#6b7088">등록된 작품이 없어요.</td></tr>';
+        return;
+      }
+      body.innerHTML = list.map(function (p) {
+        var wait = p.status === '대기';
+        return '<tr>' +
+          '<td><span class="status ' + (wait ? 'wait' : 'ok') + '">' + esc(p.status) + '</span></td>' +
+          '<td>' + esc(p.type) + '</td>' +
+          '<td>' + esc(p.studentId) + '<br>' + esc(p.name) + '</td>' +
+          '<td class="cell-desc">' + esc(p.desc) + '</td>' +
+          '<td><a href="' + esc(safeUrl(p.url)) + '" target="_blank" rel="noopener noreferrer">열기</a></td>' +
+          '<td>' + p.likes + '</td>' +
+          '<td>' + esc(p.date) + '</td>' +
+          '<td><div class="cell-actions">' +
+            (wait ? '<button class="btn btn-ok" data-act="approve" data-id="' + esc(p.id) + '">승인</button>' : '') +
+            '<button class="btn btn-danger" data-act="delete" data-id="' + esc(p.id) + '">삭제</button>' +
+          '</div></td>' +
+        '</tr>';
+      }).join('');
+      Array.prototype.forEach.call(body.querySelectorAll('button[data-act]'), function (b) {
+        b.onclick = function () { adminAct(b); };
+      });
+    }).catch(function (e) {
+      toast(errMsg(e), true);
+      body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#b91c1c">' + esc(errMsg(e)) + '</td></tr>';
+    });
+  }
+
+  function adminAct(btn) {
+    var id = btn.getAttribute('data-id');
+    var act = btn.getAttribute('data-act');
+    if (act === 'delete' && !confirm('이 작품을 삭제할까요? 되돌릴 수 없어요.')) return;
+    btn.disabled = true;
+    api(act === 'approve' ? 'approvePost' : 'deletePost', adminPw, id).then(function () {
+      toast(act === 'approve' ? '승인했어요 ✅' : '삭제했어요 🗑️');
+      loadAdmin();
+    }).catch(function (e) {
+      toast(errMsg(e), true);
+      btn.disabled = false;
+    });
+  }
+
+  /* ---------- 시작 ---------- */
+  renderTabs();
+  loadGallery();
+</script>
 </body>
 </html>
